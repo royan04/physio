@@ -1,0 +1,101 @@
+.main-header {
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: var(--transition);
+}
+
+.navbar-brand {
+  letter-spacing: -0.5px;
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-main) !important;
+  font-weight: 700 !important;
+  transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.02);
+}
+
+.navbar-brand span {
+  background: linear-gradient(135deg, var(--brand-primary) 0%, #ff4d4d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.navbar-brand img {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(209, 26, 42, 0.2);
+}
+
+/* Nav Item Tweaks */
+.nav-item .icon-btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin: 0 4px;
+  font-size: 1.1rem;
+  transition: var(--transition);
+  background-color: var(--bg-main);
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.nav-item .icon-btn:hover,
+.nav-item .icon-btn:focus-visible {
+  color: var(--brand-primary);
+  background-color: var(--brand-primary-light);
+  transform: translateY(-2px);
+  border-color: rgba(209, 26, 42, 0.1);
+  box-shadow: 0 4px 12px rgba(209, 26, 42, 0.1);
+}
+
+.nav-item .btn-danger.icon-btn,
+.nav-item .btn-outline-danger.icon-btn {
+  background-color: var(--brand-primary);
+  color: white;
+  border: none;
+}
+
+.nav-item .btn-danger.icon-btn:hover {
+  background-color: var(--brand-primary-hover);
+  box-shadow: 0 4px 12px rgba(209, 26, 42, 0.25);
+}
+
+.nav-item .btn-outline-danger.icon-btn {
+  background-color: transparent;
+  border: 2px solid var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.nav-item .btn-outline-danger.icon-btn:hover {
+  background-color: var(--brand-primary);
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .navbar-collapse {
+    background-color: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(16px);
+    padding: 1rem;
+    border-radius: 16px;
+    margin-top: 10px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid #eee;
+  }
+  .navbar-nav {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+  }
+}

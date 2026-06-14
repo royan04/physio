@@ -1,0 +1,55 @@
+.admin-dashboard {
+  padding: 2rem;
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #e53935;
+}
+
+.stats {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: white;
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.data-section {
+  margin-top: 2rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.data-table th,
+.data-table td {
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+}
+
+.data-table th {
+  background: #ef5350;
+  color: white;
+}
+
+.loading {
+  text-align: center;
+  margin-top: 3rem;
+}

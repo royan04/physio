@@ -1,0 +1,14 @@
+{
+  "name": "physio-app",
+  "version": "1.0.0",
+  "description": "Shreeji Physiotherapy & Rehab Center - Full Stack Web App",
+  "private": true,
+  "scripts": {
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend && npm run dev",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install"
+  },
+  "keywords": ["physiotherapy", "healthcare", "clinic"],
+  "author": "",
+  "license": "ISC"
+}

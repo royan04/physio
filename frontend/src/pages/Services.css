@@ -1,0 +1,148 @@
+/* ================================
+   Services Page - Layout Overrides
+   ================================ */
+
+/* Ensure the services page aligns below header and above footer */
+.layout-main.services-page {
+  display: block !important; /* Normal block layout */
+  align-items: stretch !important;
+  padding: 6rem 1rem 5rem !important; /* Added top padding for header spacing */
+  min-height: auto !important;
+  position: relative;
+  z-index: 2;
+  background: transparent;
+}
+
+/* Centered max-width container */
+.layout-main.services-page .container {
+  max-width: 1200px !important;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Row layout */
+.layout-main.services-page .row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+  justify-content: center;
+}
+
+/* Column spacing */
+.layout-main.services-page .col-md-6,
+.layout-main.services-page .col-lg-4 {
+  padding-left: 15px;
+  padding-right: 15px;
+  margin-bottom: 2rem;
+}
+
+/* ================================
+   Card Styling
+   ================================ */
+.layout-main.services-page .card {
+  border-radius: 16px;
+  overflow: hidden;
+  background-color: rgba(255, 255, 255, 0.88); /* Frosted white look */
+  backdrop-filter: blur(4px);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.layout-main.services-page .card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Card image */
+.layout-main.services-page .card-img-top {
+  height: 200px;
+  object-fit: cover;
+  width: 100%;
+  display: block;
+}
+
+/* Card body */
+.layout-main.services-page .card-body {
+  padding: 1.25rem;
+}
+
+/* ================================
+   Responsive Behavior
+   ================================ */
+
+/* Large devices */
+@media (min-width: 992px) {
+  .layout-main.services-page .col-lg-4 {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .layout-main.services-page .col-lg-4 .card {
+    flex: 1;
+  }
+}
+
+/* Medium devices */
+@media (min-width: 768px) and (max-width: 991px) {
+  .layout-main.services-page .col-md-6 {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .layout-main.services-page .col-md-6 .card {
+    flex: 1;
+  }
+}
+
+/* Small screens */
+@media (max-width: 575px) {
+  .layout-main.services-page {
+    padding: 5rem 1rem 4rem !important; /* slightly less top padding for smaller view */
+  }
+
+  .layout-main.services-page .card-img-top {
+    height: 160px;
+  }
+}
+
+/* ================================
+   Scoped Card Animation & Style
+   ================================ */
+.services-page .card {
+  border-radius: 15px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.services-page .card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+/* Force normal top alignment for Services page */
+.services-page .layout-main {
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  padding: 4rem 2rem !important;
+}
+
+/* Optional: adjust container to fit content width */
+.services-page .app-wrapper {
+  max-width: 1200px !important;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Fix card layout spacing */
+.services-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.service-card {
+  width: 300px;
+  text-align: center;
+}

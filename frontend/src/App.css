@@ -1,0 +1,132 @@
+/* --- Global Layout Reset --- */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 3rem 1.5rem;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Global inputs */
+input, select, textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  margin: 0.5rem 0 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-main);
+  background-color: #fff;
+  transition: var(--transition);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(209, 26, 42, 0.15);
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Detailed background layout */
+body {
+  position: relative;
+  min-height: 100vh;
+  margin: 0;
+  background-color: var(--bg-main);
+  overflow-x: hidden;
+}
+
+/* Huge Watermark Background Logo */
+body::before {
+  content: "";
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 150vmin;
+  height: 150vmin;
+  background: url("/src/assets/physio-bg.jpeg") no-repeat center center;
+  background-size: contain;
+  opacity: 0.05; /* Super elegant subtle watermark */
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+/* Generic page cards wrapping content */
+.page-card {
+  background: var(--bg-card);
+  padding: 2.5rem;
+  margin: 1rem 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  width: 100%;
+  max-width: 950px;
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Typography styles */
+.page-card h2 {
+  color: var(--brand-primary);
+  font-weight: 700;
+  margin-bottom: 2rem;
+  position: relative;
+  display: inline-block;
+}
+
+.page-card h2::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 0;
+  width: 40px;
+  height: 4px;
+  background: var(--brand-primary);
+  border-radius: 4px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1.5rem 1rem;
+  }
+  
+  .page-card {
+    padding: 1.5rem;
+  }
+  
+  button {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
