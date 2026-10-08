@@ -1,110 +1,147 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import "bootstrap/dist/css/bootstrap.min.css";
+import {
+  CalendarPlus,
+  CircleCheck,
+  HeartPulse,
+  LayoutDashboard,
+  LogIn,
+  LogOut,
+  Menu,
+  ReceiptText,
+  ShieldCheck,
+  Stethoscope,
+  UserRoundSearch,
+  Users,
+  X,
+} from "lucide-react";
 import "./Header.css";
+
+const workflowLinks = [
+  { to: "/dashboard", label: "Overview", Icon: LayoutDashboard },
+  { to: "/new-appointment", label: "New appointment", Icon: CalendarPlus },
+  { to: "/follow-up", label: "Patient follow-up", Icon: UserRoundSearch },
+  { to: "/bill", label: "Billing", Icon: ReceiptText },
+];
+
+const practiceLinks = [
+  { to: "/services", label: "Facilities", Icon: HeartPulse },
+  { to: "/doctors", label: "Clinical team", Icon: Stethoscope },
+];
+
+const mobileLinks = [
+  { to: "/dashboard", label: "Home", Icon: LayoutDashboard },
+  { to: "/new-appointment", label: "New visit", Icon: CalendarPlus },
+  { to: "/follow-up", label: "Follow-up", Icon: Users },
+  { to: "/bill", label: "Billing", Icon: ReceiptText },
+];
+
+function NavigationLink({ to, label, Icon, onClick }) {
+  return (
+    <NavLink to={to} onClick={onClick} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+      <Icon size={18} aria-hidden="true" />
+      <span>{label}</span>
+    </NavLink>
+  );
+}
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const auth = getAuth();
 
-  // Check if user is logged in
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!active) return;
       setUser(currentUser);
+      setIsAdmin(false);
+      if (!currentUser) return;
+
+      try {
+        const token = await currentUser.getIdTokenResult();
+        if (active) setIsAdmin(token.claims.admin === true);
+      } catch {
+        if (active) setIsAdmin(false);
+      }
     });
-    return () => unsubscribe();
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, [auth]);
 
-  const handleHomeClick = () => {
-    if (user) {
-      navigate("/dashboard");
-    } else {
-      navigate("/");
-    }
-  };
-
+  const closeMenu = () => setIsOpen(false);
   const handleLogout = async () => {
     await signOut(auth);
+    localStorage.removeItem("doctorData");
+    closeMenu();
     navigate("/");
   };
 
   return (
-    <header className="main-header">
-      <nav className="navbar navbar-expand-md navbar-light">
-        <div className="container">
-          {/* Logo */}
-          <a className="navbar-brand fw-bold text-danger fs-4 d-flex align-items-center gap-2" href="/">
-            <img 
-              src="/assets/physio-bg.jpeg"
-              alt="Shreeji Physiotherapy Clinic Logo"
-              style={{ height: "45px", width: "45px", objectFit: "contain" }}
-            />
-            <span>Shreeji Physiotherapy Clinic and Rehab Centre</span>
-          </a>
+    <>
+      <header className="main-header">
+        <nav className="header-inner" aria-label="Primary navigation">
+          <NavLink className="brand" to={user ? (isAdmin ? "/admin" : "/dashboard") : "/"} onClick={closeMenu}>
+            <img src="/assets/physio-bg.jpeg" alt="" />
+            <span className="brand-copy">
+              <strong>Shreeji Physio</strong>
+              <small>Clinic &amp; Rehab Centre</small>
+            </span>
+          </NavLink>
 
-          {/* Mobile Toggle */}
-          <button
-            className="navbar-toggler"
-            type="button"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
+          {user && (
+            <div className={`desktop-nav ${isOpen ? "is-open" : ""}`}>
+              <div className="nav-group workflow-nav">
+                <span className="nav-section-label">Workspace</span>
+                {workflowLinks.map((link) => <NavigationLink key={link.to} {...link} onClick={closeMenu} />)}
+              </div>
+              <div className="nav-group practice-nav">
+                <span className="nav-section-label">Practice</span>
+                {practiceLinks.map((link) => <NavigationLink key={link.to} {...link} onClick={closeMenu} />)}
+                {isAdmin && <NavigationLink to="/admin" label="Administration" Icon={ShieldCheck} onClick={closeMenu} />}
+              </div>
+              <div className="clinic-status">
+                <span className="status-mark"><CircleCheck size={17} /></span>
+                <div><strong>Clinic online</strong><small>Systems operational</small></div>
+              </div>
+              <button className="logout-link" type="button" onClick={handleLogout}>
+                <LogOut size={18} aria-hidden="true" />
+                <span>Sign out</span>
+              </button>
+            </div>
+          )}
 
-          {/* Nav Links */}
-          <div className={`collapse navbar-collapse ${isOpen ? "show" : ""}`}>
-            <ul className="navbar-nav ms-auto mb-2 mb-md-0 align-items-center gap-2">
+          {!user && (
+            <NavLink className="header-login" to="/">
+              <LogIn size={18} aria-hidden="true" />
+              <span>Doctor login</span>
+            </NavLink>
+          )}
 
-               {/* Home */}
-               <li className="nav-item">
-                  <button
-                   className="btn btn-light icon-btn"
-                   onClick={handleHomeClick}
-                   title="Home"
-                  >
-                   <i className="bi bi-house-door-fill"></i>
-                 </button>
-               </li>
+          {user && (
+            <button className="menu-toggle" type="button" aria-label={isOpen ? "Close navigation" : "Open navigation"} aria-expanded={isOpen} onClick={() => setIsOpen((open) => !open)}>
+              {isOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          )}
+        </nav>
+      </header>
 
-               {/* Services */}
-               <li className="nav-item">
-                 <a className="btn btn-light icon-btn" href="/services" title="Services">
-                   <i className="bi bi-heart-pulse-fill"></i>
-                 </a>
-               </li>
-
-               {/* Contact */}
-               <li className="nav-item">
-                 <a className="btn btn-light icon-btn" href="/contact" title="Contact">
-                   <i className="bi bi-telephone-fill"></i>
-                 </a>
-               </li>
-
-               {/* Login / Logout */}
-               <li className="nav-item">
-                 {user ? (
-                  <button
-                   className="btn btn-outline-danger icon-btn"
-                   onClick={handleLogout}
-                   title="Logout"
-                  >
-                    <i className="bi bi-box-arrow-right"></i>
-                 </button>
-                 ) : (
-                   <a className="btn btn-danger icon-btn" href="/" title="Login">
-                     <i className="bi bi-box-arrow-in-right"></i>
-                   </a>
-                 )}
-               </li>
-
-           </ul>
-
-          </div>
-        </div>
-      </nav>
-    </header>
+      {user && (
+        <nav className="mobile-tab-bar" aria-label="Quick actions">
+          {mobileLinks.map(({ to, label, Icon }) => (
+            <NavLink key={to} to={to} className={({ isActive }) => `mobile-tab ${isActive ? "active" : ""}`}>
+              <Icon size={21} strokeWidth={2} aria-hidden="true" />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      )}
+    </>
   );
 }

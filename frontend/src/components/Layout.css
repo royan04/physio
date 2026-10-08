@@ -1,58 +1,46 @@
-/* --- Outer container with background --- */
 .layout-container {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  position: relative;
-  overflow: hidden;
+  background: var(--canvas);
 }
 
-/* --- Background image with blur --- */
-.layout-container::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background-image: url("../assets/physio-bg.jpeg");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: blur(6px) brightness(0.9);
-  z-index: 0;
+.workspace-layout .layout-main {
+  background-color: #f3f5f4;
+  background-image:
+    linear-gradient(rgba(20, 35, 39, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 35, 39, 0.025) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
-/* --- Main section --- */
 .layout-main {
+  position: relative;
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center; /* centers for login/signup */
-  position: relative;
-  z-index: 1;
-  padding: 3rem 1rem;
   width: 100%;
-  min-height: calc(100vh - 160px);
+  padding: 32px 20px 48px;
 }
 
-/* --- Services page: disable vertical centering --- */
-.layout-main.services-page {
-  align-items: flex-start !important;
-  justify-content: flex-start !important;
-  padding-top: 4rem !important;
-  min-height: auto !important;
-}
-
-/* --- Content wrapper --- */
 .app-wrapper {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 480px;
+  width: min(100%, 1340px);
+  margin: 0 auto;
 }
 
-/* --- Footer --- */
-footer {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  margin-top: auto;
+.auth-layout .layout-main {
+  display: grid;
+  align-items: center;
+  padding-top: 40px;
+  background: linear-gradient(rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.94)), url("/assets/physio-bg.jpeg") center / cover no-repeat;
+}
+
+.auth-layout .app-wrapper { width: min(100%, 1040px); }
+
+@media (max-width: 760px) {
+  .workspace-layout .layout-main { padding: 20px 14px calc(92px + env(safe-area-inset-bottom)); }
+  .auth-layout .layout-main { padding: 24px 14px 40px; }
+}
+
+@media (min-width: 901px) {
+  .workspace-layout .layout-main {
+    padding: 34px 30px 50px 288px;
+  }
 }

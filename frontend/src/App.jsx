@@ -1,4 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "./firebaseConfig";
 import "./App.css";
 
 import Layout from "./components/Layout";
@@ -16,17 +19,53 @@ import AdminDashboard from "./pages/AdminDashboard";
 import BillPage from "./pages/BillPage";     // ⬅️ new bill selection page
 
 // 🔒 Protected Route Wrapper
-const ProtectedRoute = ({ element, allowedRoles }) => {
-  const doctorData = JSON.parse(localStorage.getItem("doctorData"));
+const getStoredDoctor = () => {
+  try {
+    return JSON.parse(localStorage.getItem("doctorData"));
+  } catch {
+    localStorage.removeItem("doctorData");
+    return null;
+  }
+};
+
+const ProtectedRoute = ({ element }) => {
+  const doctorData = getStoredDoctor();
 
   if (!doctorData) {
     return <Navigate to="/" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(doctorData.role)) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  return element;
+};
 
+const AdminRoute = ({ element }) => {
+  const [access, setAccess] = useState("checking");
+
+  useEffect(() => {
+    let active = true;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        if (active) setAccess("signed-out");
+        return;
+      }
+
+      try {
+        const token = await user.getIdTokenResult(true);
+        if (active) setAccess(token.claims.admin === true ? "allowed" : "denied");
+      } catch {
+        if (active) setAccess("denied");
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, []);
+
+  if (access === "checking") return <div className="loading-screen"><p>Checking administrator access...</p></div>;
+  if (access === "signed-out") return <Navigate to="/" replace />;
+  if (access === "denied") return <Navigate to="/dashboard" replace />;
   return element;
 };
 
@@ -80,10 +119,7 @@ function App() {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute
-                element={<AdminDashboard />}
-                allowedRoles={["admin"]}
-              />
+              <AdminRoute element={<AdminDashboard />} />
             }
           />
 

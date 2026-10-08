@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { db, auth } from "../firebaseConfig";
-import { Capacitor } from "@capacitor/core";
-import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import BillPreview from "../components/BillPreview";
 import {
   collection,
   addDoc,
@@ -24,6 +23,7 @@ function NewAppointment() {
   const [age, setAge] = useState(prefilled.age || "");
   const [gender, setGender] = useState(prefilled.gender || "");
   const [contact, setContact] = useState(prefilled.contact || "");
+  const [patientEmail, setPatientEmail] = useState(prefilled.patientEmail || "");
 
   // Doctor Info
   const [doctorName, setDoctorName] = useState("");
@@ -56,8 +56,7 @@ function NewAppointment() {
   });
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [billNo, setBillNo] = useState("");
-  const [billModalHtml, setBillModalHtml] = useState(null);
-  const [billModalFileName, setBillModalFileName] = useState("");
+  const [billPreview, setBillPreview] = useState(null);
 
   // 👈 NEW: Dynamic clinic timing based on login selection
   const getClinicTiming = () => {
@@ -293,31 +292,9 @@ function NewAppointment() {
     `;
     const billHtml = `<!doctype html><html><head><meta charset="utf-8" /><title>${billNo || "Bill"}</title></head><body>${html}</body></html>`;
 
-    if (Capacitor.isNativePlatform()) {
-      const safeBillNo = String(billNo || "bill").replace(/[^a-zA-Z0-9-_]/g, "_");
-      const fileName = `${safeBillNo}.html`;
-      try {
-        await Filesystem.writeFile({
-          path: fileName,
-          data: billHtml,
-          directory: Directory.Documents,
-          encoding: Encoding.UTF8,
-          recursive: true,
-        });
-      } catch (fsErr) {
-        console.warn("Could not save file:", fsErr);
-      }
-      setBillModalHtml(billHtml);
-      setBillModalFileName(fileName);
-      return { savedToDevice: true, fileName };
-    }
-
-    const w = window.open("", "_blank");
-    w.document.write(billHtml);
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 200);
-    return { savedToDevice: false };
+    const { createBillPdf } = await import("../utils/billPdf");
+    const file = createBillPdf({ billNo, billDate, clinic, patientName, amount, payMode, chequeNo, chequeDate, upiId, upiTxnId, treatmentOf, durationText, noOfSessions, ratePerSession, sessionsDateText, doctorSign });
+    return { html: billHtml, file, billNo, patientName, contact, patientEmail };
   }
 
   // Save appointment in Firestore
@@ -338,6 +315,7 @@ function NewAppointment() {
         age,
         gender,
         contact,
+        patientEmail,
         doctorName,
         department,
         doctorEmail,
@@ -384,6 +362,8 @@ function NewAppointment() {
       const billData = {
         billNo: serial,
         patientName,
+        contact,
+        patientEmail,
         doctorName,
         department,
         visitDate,
@@ -403,9 +383,7 @@ function NewAppointment() {
         doctorId: auth.currentUser?.uid || "",
       };
 
-      await addDoc(collection(db, "bills"), billData);
-
-      const billResult = await openReceiptBill({
+      const preview = await openReceiptBill({
         billNo: serial,
         billDate: new Date(),
         patientName,
@@ -425,10 +403,9 @@ function NewAppointment() {
         sessionsDateText: session.sessionsDateText || visitDate,
         doctorSign: doctorName || "Dr. Dhaval Shah",
       });
+      await addDoc(collection(db, "bills"), billData);
+      setBillPreview(preview);
 
-      if (!billResult?.savedToDevice) {
-        navigate("/dashboard");
-      }
     } catch (e) {
       console.error(e);
       alert("Could not generate bill. Please try again.");
@@ -437,109 +414,30 @@ function NewAppointment() {
     }
   };
 
-  // Share bill using Web Share API (works on Android)
-  const handleShareBill = async () => {
-    if (!billModalHtml) return;
-    try {
-      const blob = new Blob([billModalHtml], { type: "text/html" });
-      const file = new File([blob], billModalFileName || "bill.html", { type: "text/html" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: "Physiotherapy Bill",
-          text: "Please find your bill attached.",
-          files: [file],
-        });
-      } else {
-        // Fallback: trigger print of iframe
-        const iframeEl = document.getElementById("bill-preview-iframe");
-        if (iframeEl) {
-          iframeEl.contentWindow.focus();
-          iframeEl.contentWindow.print();
-        }
-      }
-    } catch (err) {
-      console.error("Share failed:", err);
-    }
-  };
-
-  // In-app bill preview modal (shown after bill is generated on Android)
-  if (billModalHtml) {
-    return (
-      <div style={{
-        position: "fixed",
-        top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 9999,
-        background: "#fff",
-        display: "flex",
-        flexDirection: "column",
-      }}>
-        {/* Top bar */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 16px",
-          background: "#1a1a2e",
-          color: "#fff",
-          flexShrink: 0,
-        }}>
-          <button
-            onClick={() => { setBillModalHtml(null); navigate("/dashboard"); }}
-            style={{
-              background: "none",
-              border: "1.5px solid #fff",
-              color: "#fff",
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 15,
-              cursor: "pointer",
-            }}
-          >
-            ← Done
-          </button>
-          <span style={{ fontWeight: "bold", fontSize: 16 }}>Bill Preview</span>
-          <button
-            onClick={handleShareBill}
-            style={{
-              background: "#4caf50",
-              border: "none",
-              color: "#fff",
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 15,
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            📤 Share
-          </button>
-        </div>
-        {/* Bill iframe - renders HTML inside the app */}
-        <iframe
-          id="bill-preview-iframe"
-          srcDoc={billModalHtml}
-          style={{
-            flex: 1,
-            width: "100%",
-            border: "none",
-            background: "#fff",
-          }}
-          title="Bill Preview"
-          sandbox="allow-same-origin allow-scripts"
-        />
-      </div>
-    );
+  if (billPreview) {
+    return <BillPreview html={billPreview.html} file={billPreview.file} billNo={billPreview.billNo} patientName={billPreview.patientName} initialPhone={billPreview.contact} initialEmail={billPreview.patientEmail} onDone={() => setBillPreview(null)} />;
   }
 
   // ... rest of your JSX remains EXACTLY THE SAME ...
   return (
     <div className="visit-form-wrapper">
-      <h2 className="form-title">🩺 New Appointment</h2>
+      <header className="form-page-header">
+        <div>
+          <p className="page-eyebrow">Clinical intake</p>
+          <h1>New appointment</h1>
+          <p>Capture the patient, clinical assessment and payment details in one guided record.</p>
+        </div>
+        <div className="workflow-steps" aria-label="Appointment workflow">
+          <span className="active"><b>1</b> Patient</span>
+          <span><b>2</b> Assessment</span>
+          <span><b>3</b> Billing</span>
+        </div>
+      </header>
       {/* ALL YOUR EXISTING FORM JSX - NO CHANGES NEEDED */}
       <form className="visit-form" onSubmit={handleSubmit}>
         {/* Patient Info */}
         <div className="form-section">
-          <h3>Patient Info</h3>
+          <h3>Patient information</h3>
           <div className="form-grid">
             <input
               type="text"
@@ -572,12 +470,19 @@ function NewAppointment() {
               onChange={(e) => setContact(e.target.value)}
               required
             />
+            <input
+              type="email"
+              placeholder="Patient email (optional)"
+              value={patientEmail}
+              onChange={(e) => setPatientEmail(e.target.value)}
+              aria-label="Patient email"
+            />
           </div>
         </div>
 
         {/* Doctor Info */}
         <div className="form-section">
-          <h3>Doctor Info</h3>
+          <h3>Practitioner details</h3>
           <div className="form-grid">
             <input
               type="text"
@@ -601,7 +506,7 @@ function NewAppointment() {
 
         {/* Visit Details */}
         <div className="form-section">
-          <h3>Visit Details</h3>
+          <h3>Assessment &amp; session</h3>
           <input
             type="date"
             value={visitDate}

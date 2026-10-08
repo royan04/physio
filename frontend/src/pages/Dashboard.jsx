@@ -1,9 +1,17 @@
 // src/pages/Dashboard.jsx
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  CalendarDays,
+  FileText,
+  ReceiptText,
+  Stethoscope,
+  Trash2,
+  Upload,
+  Users,
+} from "lucide-react";
+import {
   doc,
-  getDoc,
   collection,
   query,
   where,
@@ -12,7 +20,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import { auth, db, storage } from "../firebaseConfig";
 import "./Dashboard.css";
 
@@ -23,10 +31,7 @@ const Dashboard = () => {
   const [appointments, setAppointments] = useState([]);
   const [doctor, setDoctor] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("today");
   const navigate = useNavigate();
-  const [showBillSelector, setShowBillSelector] = useState(false);
-  const [selectedBillApptId, setSelectedBillApptId] = useState("");
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patientVisits, setPatientVisits] = useState([]);
   const [showPatients, setShowPatients] = useState(false);
@@ -72,7 +77,7 @@ const Dashboard = () => {
 
 
     return () => unsubscribeAuth();
-  }, [navigate, view]);
+  }, [navigate]);
 
 
   // 🔹 Fetch appointments for this doctor
@@ -123,31 +128,34 @@ const Dashboard = () => {
 
     setPatients(Object.values(patientMap));
   };
-  const uniquePatients = Object.values(
-    patients.reduce((acc, patient) => {
-      acc[patient.name] = patient;
-      return acc;
-    }, {})
-  );
-
-
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const handlePatientClick = async (patient) => {
-    setSelectedPatient(patient);
+    const doctorId = auth.currentUser?.uid;
+    if (!doctorId) {
+      navigate("/", { replace: true });
+      return;
+    }
 
-    const q = query(
-      collection(db, "appointments"),
-      where("patientName", "==", patient.name)
-    );
-
-    const snap = await getDocs(q);
-    const visits = snap.docs.map(d => d.data());
-
-    visits.sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate));
-
-    setPatientVisits(visits);
+    try {
+      const q = query(
+        collection(db, "appointments"),
+        where("doctorId", "==", doctorId),
+        where("patientName", "==", patient.name)
+      );
+      const snap = await getDocs(q);
+      const visits = snap.docs.map(d => d.data());
+      visits.sort((a, b) => new Date(b.visitDate) - new Date(a.visitDate));
+      setSelectedPatient(patient);
+      setPatientVisits(visits);
+    } catch (error) {
+      console.error("Error fetching patient visits:", error);
+      setSelectedPatient(null);
+      setPatientVisits([]);
+      alert("Could not load patient visits. Please try again.");
+      return;
+    }
 
     // Ensure the card scrolls into view, especially on mobile!
     setTimeout(() => {
@@ -180,22 +188,27 @@ const Dashboard = () => {
   };
 
 
-  // 🔹 Handle Logout
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate("/");
-    } catch (error) {
-      console.error("Logout Error:", error);
-      alert("Error logging out. Try again.");
-    }
-  };
-
-
-
   const filteredAppointments = appointments.filter(
     (appt) => appt.visitDate === selectedDate
   );
+
+  const patientCount = new Set(appointments.map((appt) => appt.patientName).filter(Boolean)).size;
+  const selectedDateLabel = new Date(`${selectedDate}T00:00:00`).toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
+  const sessionOptions = {
+    morning: { label: "Morning clinic", hours: "8:00 AM - 1:00 PM" },
+    evening: { label: "Evening clinic", hours: "2:00 PM - 7:00 PM" },
+    both: { label: "Full-day clinic", hours: "8:00 AM - 7:00 PM" },
+  };
+  const activeSession = sessionOptions[localStorage.getItem("doctorTimingSelection")] || sessionOptions.morning;
+  const scheduledPatients = new Set(filteredAppointments.map((appointment) => appointment.patientName).filter(Boolean)).size;
+  const billReadyVisits = filteredAppointments.filter((appointment) => appointment.session).length;
+  const recentAppointments = [...appointments]
+    .sort((a, b) => new Date(b.visitDate || 0) - new Date(a.visitDate || 0))
+    .slice(0, 4);
 
 
 
@@ -208,28 +221,43 @@ const Dashboard = () => {
 
 
   return (
-    <div className="dashboard container py-4">
-      {/* 🔹 Header with Logout */}
+    <div className="dashboard">
       <header className="dashboard-header">
-        <h1>Doctor Dashboard</h1>
-        <button className="logout-btn" onClick={handleLogout}>
-          🚪 Logout
-        </button>
+        <div>
+          <p className="page-eyebrow">Clinical workspace</p>
+          <h1>Good day, {doctor?.name?.split(" ")[0] || "Doctor"}</h1>
+          <p className="dashboard-subtitle">Here is the clinic schedule and patient activity for {selectedDateLabel}.</p>
+        </div>
       </header>
 
+      <section className="dashboard-stats" aria-label="Clinic summary">
+        <article className="stat-card stat-card-brand">
+          <span className="stat-icon"><CalendarDays size={20} /></span>
+          <div><strong>{filteredAppointments.length}</strong><span>Visits selected</span></div>
+        </article>
+        <article className="stat-card stat-card-teal">
+          <span className="stat-icon"><Users size={20} /></span>
+          <div><strong>{patientCount}</strong><span>Total patients</span></div>
+        </article>
+        <article className="stat-card stat-card-amber">
+          <span className="stat-icon"><Stethoscope size={20} /></span>
+          <div><strong>{doctor?.department || "Physio"}</strong><span>Department</span></div>
+        </article>
+      </section>
 
-      {/* Doctor Profile */}
-      <section className="doctor-profile mb-4">
+      <div className="dashboard-toolbar">
+      <section className="doctor-profile">
         <div className="profile-left">
           <div className="photo-wrapper">
             <img
-              src={doctor?.photoURL || "/default-doctor.png"}
+              src={doctor?.photoURL || "/assets/physio-bg.jpeg"}
               alt="Doctor Profile"
               className="doctor-photo"
             />
             <div className="photo-overlay">
               <label className="upload-btn">
-                📸
+                <Upload size={16} />
+                <span className="sr-only">Upload profile photo</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -237,8 +265,8 @@ const Dashboard = () => {
                   hidden
                 />
               </label>
-              <button className="remove-btn" onClick={handleRemovePhoto}>
-                ❌
+              <button className="remove-btn" onClick={handleRemovePhoto} title="Remove profile photo">
+                <Trash2 size={15} />
               </button>
             </div>
           </div>
@@ -246,17 +274,15 @@ const Dashboard = () => {
         <div className="profile-right">
           <h2>{doctor?.name || "Doctor"}</h2>
           <p>{doctor?.department || "Department not set"}</p>
-          <p className="text-muted">{doctor?.email}</p>
+          <p>{doctor?.email}</p>
         </div>
       </section>
 
-
-      {/* Filters */}
-      {/* Calendar Filter */}
-      <section className="filters mb-4">
-        <label className="calendar-label">
-          📅 Select Date
+      <section className="filters">
+        <label className="calendar-label" htmlFor="dashboard-date">
+          <span><CalendarDays size={17} /> Schedule date</span>
           <input
+            id="dashboard-date"
             type="date"
             className="calendar-input"
             value={selectedDate}
@@ -264,41 +290,92 @@ const Dashboard = () => {
           />
         </label>
       </section>
+      <section className="clinic-session-panel">
+        <span className="session-pulse" aria-hidden="true" />
+        <div>
+          <small>Active session</small>
+          <strong>{activeSession.label}</strong>
+          <span>{activeSession.hours}</span>
+        </div>
+      </section>
+      <section className="dashboard-insights">
+        <div className="insights-heading"><span>Day overview</span><strong>{selectedDateLabel}</strong></div>
+        <dl>
+          <div><dt>Scheduled visits</dt><dd>{filteredAppointments.length}</dd></div>
+          <div><dt>Patients expected</dt><dd>{scheduledPatients}</dd></div>
+          <div><dt>Billing records ready</dt><dd>{billReadyVisits}</dd></div>
+        </dl>
+      </section>
+      </div>
 
 
 
-      {/* Appointments */}
       {/* Appointments */}
       <section className="appointments mb-4">
-        <h3>
-          Appointments for{" "}
-          <span className="text-primary">{selectedDate}</span>
-        </h3>
+        <div className="section-heading-row">
+          <div>
+            <p className="section-kicker">Daily schedule</p>
+            <h3>Appointments</h3>
+          </div>
+          <span className="date-badge">{selectedDateLabel}</span>
+        </div>
 
         {filteredAppointments.length === 0 ? (
-          <p className="no-data">No appointments found.</p>
+          <div className="empty-schedule">
+            <span><CalendarDays size={22} /></span>
+            <div><h4>Your schedule is clear</h4><p>No appointments are booked for this date.</p></div>
+          </div>
         ) : (
           <div className="appointment-list">
             {filteredAppointments.map((appt) => (
               <div key={appt.id} className="appointment-card">
-
-                <div className="appt-header">
-                  <h5>{appt.patientName}</h5>
-                  <span className="appt-type">{appt.type}</span>
+                <div className="appointment-time">
+                  <strong>{appt.time || "Open"}</strong>
+                  <span>{appt.visitDate}</span>
                 </div>
-
-                <p>
-                  <strong>Time:</strong> {appt.time || "N/A"}
-                </p>
-
-                <p>
-                  <strong>Session:</strong>{" "}
-                  {appt?.session
-                    ? `Duration ${Number(appt.session.durationMins ?? 0)} mins, Fees ₹${Number(appt.session.fees ?? 0)}`
-                    : "N/A"}
-                </p>
-
+                <div className="appointment-content">
+                  <div className="appt-header">
+                    <h5>{appt.patientName}</h5>
+                    <span className="appt-type">{appt.type || "Visit"}</span>
+                  </div>
+                  <div className="appointment-meta">
+                    <span><strong>{Number(appt?.session?.durationMins ?? 0)}</strong> minutes</span>
+                    <span><strong>INR {Number(appt?.session?.fees ?? 0)}</strong> session fee</span>
+                  </div>
+                </div>
               </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="recent-activity">
+        <div className="section-heading-row">
+          <div><p className="section-kicker">Patient records</p><h3>Recent activity</h3></div>
+          <div className="activity-header-actions">
+            <span className="record-count">{recentAppointments.length} records</span>
+            <button
+              className="patient-list-toggle"
+              type="button"
+              onClick={() => {
+                setShowPatients(!showPatients);
+                if (!showPatients) fetchPatients();
+              }}
+            >
+              <Users size={17} /> {showPatients ? "Hide directory" : "Patient directory"}
+            </button>
+          </div>
+        </div>
+        {recentAppointments.length === 0 ? (
+          <p className="no-data compact">Patient activity will appear here after the first visit.</p>
+        ) : (
+          <div className="activity-list">
+            {recentAppointments.map((appointment) => (
+              <article className="activity-row" key={appointment.id}>
+                <span className="activity-avatar">{appointment.patientName?.charAt(0)?.toUpperCase() || "P"}</span>
+                <div><strong>{appointment.patientName || "Unnamed patient"}</strong><span>{appointment.diagnosis || appointment.symptoms || "General physiotherapy visit"}</span></div>
+                <time>{appointment.visitDate ? new Date(`${appointment.visitDate}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "No date"}</time>
+              </article>
             ))}
           </div>
         )}
@@ -329,7 +406,7 @@ const Dashboard = () => {
                   <tbody>
                     {patients.map((patient, index) => (
                       <tr key={`patr-${index}`} className={selectedPatient?.name === patient.name ? "selected-row" : ""}>
-                        <td style={{ fontWeight: "600", color: "var(--brand-primary)" }}>
+                        <td style={{ fontWeight: "600", color: "var(--brand)" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                             <div className="avatar-circle">{patient.name.charAt(0).toUpperCase()}</div>
                             {patient.name}
@@ -347,7 +424,7 @@ const Dashboard = () => {
                               style={{ whiteSpace: "nowrap" }}
                               onClick={() => handlePatientClick(patient)}
                             >
-                              📄 Details
+                              <FileText size={15} /> Details
                             </button>
 
                           </div>
@@ -369,13 +446,13 @@ const Dashboard = () => {
                       className="btn-sm btn-outline-primary"
                       onClick={() => setSelectedPatient(null)}
                     >
-                      ❌ Close
+                      Close
                     </button>
                   </div>
 
                   {/* BILL SUMMARY TABLE */}
                   <div className="bill-summary-container" style={{ margin: "20px 0", background: "#f8fafc", padding: "15px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
-                    <h5 style={{ color: "var(--brand-primary)", marginBottom: "12px", fontWeight: "700" }}>🧾 Billing Summary</h5>
+                    <h5 style={{ color: "var(--brand)", marginBottom: "12px", fontWeight: "700" }}><ReceiptText size={18} /> Billing Summary</h5>
                     <table className="patients-table" style={{ fontSize: "0.95rem" }}>
                       <thead>
                         <tr>
@@ -508,144 +585,6 @@ const Dashboard = () => {
       )}
 
 
-
-      {/* Actions */}
-      <section className="actions">
-
-        <button
-          className="btn-outline"
-          onClick={() => {
-            setShowPatients(!showPatients);
-            if (!showPatients) fetchPatients();
-          }}
-        >
-          👥 View Patients
-        </button>
-
-        <button
-          className="btn-primary"
-          onClick={() => navigate("/new-appointment")}
-        >
-          + New Appointment
-        </button>
-
-        <button
-          className="btn-outline"
-          onClick={() => navigate("/follow-up")}
-        >
-          + Follow-up
-        </button>
-
-        <button
-          className="btn-red"
-          onClick={() => navigate("/bill")}
-        >
-          🧾 Generate Bill
-        </button>
-
-      </section>
-
-
-
-      {showBillSelector && (
-        <div
-          className="modal-backdrop"
-          onClick={() => setShowBillSelector(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1000,
-          }}
-        >
-
-
-          <div
-            className="modal-card"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              padding: 20,
-              borderRadius: 8,
-              width: "min(620px, 94vw)",
-              maxHeight: "80vh",
-              overflowY: "auto",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.2)",
-            }}
-          >
-            <h3 style={{ marginTop: 0 }}>Select Appointment for Bill</h3>
-
-
-            {appointments.length === 0 ? (
-              <p>No appointments available.</p>
-            ) : (
-              <>
-                {/* You can filter here by selectedDate if you only want that day */}
-                <div style={{ marginBottom: 8, fontSize: "0.9rem", color: "#555" }}>
-                  Showing appointments for {selectedDate}
-                </div>
-                <select
-                  style={{
-                    width: "100%",
-                    padding: "8px 10px",
-                    borderRadius: 4,
-                    border: "1px solid #ccc",
-                    marginBottom: 16,
-                  }}
-                  value={selectedBillApptId}
-                  onChange={(e) => setSelectedBillApptId(e.target.value)}
-                >
-                  <option value="">Select Appointment</option>
-                  {appointments
-                    .filter((appt) => appt.visitDate === selectedDate)
-                    .map((appt) => (
-                      <option key={appt.id} value={appt.id}>
-                        {appt.visitDate} - {appt.patientName} (
-                        {appt.session
-                          ? `Duration ${appt.session.durationMins || 0} mins, Fees ₹${appt.session.fees || 0
-                          }`
-                          : "No session details"}
-                        )
-                      </option>
-                    ))}
-                </select>
-
-
-                <div className="form-actions" style={{ display: "flex", gap: 8 }}>
-                  <button
-                    className="btn-red"
-                    disabled={!selectedBillApptId}
-                    onClick={() => {
-                      const appt = appointments.find(
-                        (a) => a.id === selectedBillApptId
-                      );
-                      if (!appt) return;
-                      // Navigate to bill page with this appointment
-                      navigate("/new-appointment", {
-                        state: {
-                          patient: appt,
-                          timingSelection: timingSelection  // 👈 ADD THIS LINE ONLY
-                        }
-                      });
-                    }}
-                  >
-                    Generate Bill for Selected
-                  </button>
-                  <button
-                    className="btn-outline"
-                    onClick={() => setShowBillSelector(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
     </div>
   );

@@ -1,90 +1,49 @@
-// src/pages/Services.jsx
-import React from "react";
+import { Activity, HeartPulse } from "lucide-react";
 import "./Services.css";
 
-export default function Services() {
-  const services = [
-    {
-      title: "Functional Electrical Stimulation",
-      description: "Electrical therapy to restore muscle function and promote recovery.",
-      img: "../assets/i1.jpg",
-    },
-    {
-      title: "Body Weight Support System Treadmill",
-      description: "Assisted treadmill training for gait correction and rehabilitation.",
-      img: "../assets/i2.jpg",
-    },
-    {
-      title: "Saebotlex for Stroke Patient Hand Training",
-      description: "Advanced robotic hand training for improved stroke rehabilitation.",
-      img: "../assets/i3.jpg",
-    },
-    {
-      title: "Cupping & Dry Needle Therapy",
-      description: "Pain relief and muscle relaxation through specialized therapeutic methods.",
-      img: "../assets/i4.jpg",
-    },
-    {
-      title: "Australian Standard Manual Therapy",
-      description: "Hands-on physiotherapy techniques to enhance joint and muscle function.",
-      img: "../assets/i5.jpg",
-    },
-    {
-      title: "McKenzie Treatment for Disc & Radiating Pain",
-      description: "Evidence-based spine treatment for disc and nerve pain relief.",
-      img: "../assets/i6.jpg",
-    },
-    {
-      title: "Rehab for Joint Pain & Replacement",
-      description: "Comprehensive rehab for arthritis, ligament injury, and post-surgery recovery.",
-      img: "../assets/i7.jpg",
-    },
-    {
-      title: "Pilates for Back Pain",
-      description: "Strengthening and posture correction through Pilates exercises.",
-      img: "../assets/i8.jpg",
-    },
-    {
-      title: "Orthopaedic Patient Rehab",
-      description: "Tailored therapy programs for orthopaedic recovery and mobility restoration.",
-      img: "../assets/i9.jpg",
-    },
-    {
-      title: "Neurological Patient Rehab",
-      description: "Special care for neurological disorders like stroke and Parkinson’s disease.",
-      img: "../assets/i10.jpg",
-    },
-    {
-      title: "Paediatric Patient Rehab",
-      description: "Child-friendly therapy programs to support early physical development.",
-      img: "../assets/i11.jpg",
-    },
-  ];
+const services = [
+  ["Functional Electrical Stimulation", "Electrical therapy to restore muscle function and promote recovery.", "i1.jpg"],
+  ["Body Weight Support Treadmill", "Assisted treadmill training for gait correction and rehabilitation.", "i2.jpg"],
+  ["SaeboFlex Hand Training", "Advanced hand training to support stroke rehabilitation and dexterity.", "i3.jpg"],
+  ["Cupping & Dry Needling", "Targeted pain relief and muscle relaxation through specialised therapy.", "i4.jpg"],
+  ["Australian Manual Therapy", "Hands-on techniques designed to improve joint and muscle function.", "i5.jpg"],
+  ["McKenzie Spine Treatment", "Evidence-based treatment for disc conditions and radiating pain.", "i6.jpg"],
+  ["Joint & Replacement Rehab", "Structured recovery for arthritis, ligament injury and surgery.", "i7.jpg"],
+  ["Clinical Pilates", "Guided strengthening and posture correction for back pain.", "i8.jpg"],
+  ["Orthopaedic Rehabilitation", "Personalised programs for mobility and orthopaedic recovery.", "i9.jpg"],
+  ["Neurological Rehabilitation", "Dedicated care for stroke, Parkinson's disease and related conditions.", "i10.jpg"],
+  ["Paediatric Rehabilitation", "Supportive therapy for movement and early physical development.", "i11.jpg"],
+];
 
+export default function Services() {
   return (
     <div className="services-page">
-      <div className="container my-5">
-        <h2 className="text-center mb-4 text-danger fw-bold">Our Facilities</h2>
-        <div className="row justify-content-center">
-          {services.map((service, index) => (
-            <div className="col-md-6 col-lg-4 mb-4" key={index}>
-              <div className="card h-100 shadow border-0 hover-shadow transition-all">
-                <img
-                  src={service.img}
-                  className="card-img-top"
-                  alt={service.title}
-                />
-                <div className="card-body text-center">
-                  <h5 className="card-title text-danger fw-semibold">
-                    {service.title}
-                  </h5>
-                  <p className="card-text text-muted">{service.description}</p>
-                </div>
-              </div>
-            </div>
-          ))}
+      <header className="services-header">
+        <div>
+          <p className="page-eyebrow">Treatment facilities</p>
+          <h1>Specialised care, all in one clinic</h1>
+          <p>Explore the equipment and treatment approaches available for mobility, recovery and long-term rehabilitation.</p>
         </div>
-      </div>
+        <div className="services-summary">
+          <HeartPulse size={22} />
+          <span><strong>{services.length}</strong> therapy capabilities</span>
+        </div>
+      </header>
+
+      <section className="services-grid" aria-label="Clinic facilities">
+        {services.map(([title, description, image], index) => (
+          <article className="service-card" key={title}>
+            <div className="service-image-wrap">
+              <img src={`/assets/${image}`} alt={title} loading="lazy" />
+              <span className="service-number">{String(index + 1).padStart(2, "0")}</span>
+            </div>
+            <div className="service-body">
+              <Activity size={18} aria-hidden="true" />
+              <div><h2>{title}</h2><p>{description}</p></div>
+            </div>
+          </article>
+        ))}
+      </section>
     </div>
   );
 }

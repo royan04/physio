@@ -37,7 +37,6 @@ physio/
 ### Prerequisites
 
 - **Node.js** (v18+)
-- **PostgreSQL** (v14+)
 - A **Firebase** project with Auth, Firestore, and Storage enabled
 
 ### 1. Clone the repository
@@ -137,18 +136,7 @@ npx cap sync
 npx cap open android
 ```
 
-## Environment Variables
 
-### Backend (`backend/.env`)
-
-| Variable      | Description               |
-| ------------- | ------------------------- |
-| `DB_USER`     | PostgreSQL username       |
-| `DB_HOST`     | PostgreSQL host           |
-| `DB_NAME`     | PostgreSQL database name  |
-| `DB_PASSWORD` | PostgreSQL password       |
-| `DB_PORT`     | PostgreSQL port           |
-| `PORT`        | Server port (default 4000)|
 
 ### Frontend (`frontend/.env`)
 
@@ -162,6 +150,3 @@ npx cap open android
 | `VITE_FIREBASE_APP_ID`              | Firebase app ID            |
 | `VITE_FIREBASE_MEASUREMENT_ID`      | Firebase measurement ID    |
 
-## License
-
-ISC

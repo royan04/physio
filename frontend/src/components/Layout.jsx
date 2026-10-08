@@ -1,28 +1,17 @@
-// src/components/Layout.jsx
 import { useLocation } from "react-router-dom";
 import Header from "./Header";
-import Footer from "./Footer";
 import "./Layout.css";
 
-const Layout = ({ children }) => {
-  const location = useLocation();
-  const path = location.pathname;
-
-  // Determine layout class based on route
-  const getLayoutClass = () => {
-    if (path === "/services") return "layout-main services-page";
-    return "layout-main";
-  };
+export default function Layout({ children }) {
+  const { pathname } = useLocation();
+  const isAuthRoute = pathname === "/" || pathname === "/signup";
 
   return (
-    <div className="layout-container">
+    <div className={`layout-container ${isAuthRoute ? "auth-layout" : "workspace-layout"}`}>
       <Header />
-
-      <main className={getLayoutClass()}>
+      <main className="layout-main">
         <div className="app-wrapper">{children}</div>
       </main>
     </div>
   );
-};
-
-export default Layout;
+}

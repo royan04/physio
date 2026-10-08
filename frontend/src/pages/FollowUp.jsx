@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../firebaseConfig";
+import { auth, db } from "../firebaseConfig";
 import { useLocation } from "react-router-dom";
 import "./PatientVisitForm.css";
 
@@ -33,16 +33,24 @@ const handleSearch = async (searchValue) => {
   setLoading(true);
 
   try {
-    const q1 = query(collection(db, "appointments"), where("patientName", "==", searchTerm));
-    const q2 = query(collection(db, "appointments"), where("contact", "==", searchTerm));
+    await auth.authStateReady();
+    const doctorId = auth.currentUser?.uid;
+    if (!doctorId) {
+      navigate("/", { replace: true });
+      return;
+    }
+
+    const q1 = query(collection(db, "appointments"), where("doctorId", "==", doctorId), where("patientName", "==", searchTerm));
+    const q2 = query(collection(db, "appointments"), where("doctorId", "==", doctorId), where("contact", "==", searchTerm));
 
     const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-    const docs = [...snap1.docs, ...snap2.docs];
+    const docs = [...new Map([...snap1.docs, ...snap2.docs].map((item) => [item.id, item])).values()];
     const data = docs.map((d) => ({ id: d.id, ...d.data() }));
 
     if (data.length === 0) {
       alert("No patient found!");
       setPatient(null);
+      setAllVisits([]);
       return;
     }
 
@@ -70,7 +78,17 @@ const handleSearch = async (searchValue) => {
 
   return (
     <div className="visit-form-wrapper">
-      <h2 className="form-title">🔎 Follow-Up</h2>
+      <header className="form-page-header">
+        <div>
+          <p className="page-eyebrow">Continuity of care</p>
+          <h1>Patient follow-up</h1>
+          <p>Find the patient, review prior visits and continue treatment with full clinical context.</p>
+        </div>
+        <div className="workflow-steps compact" aria-label="Follow-up workflow">
+          <span className={!patient ? "active" : "complete"}><b>1</b> Find patient</span>
+          <span className={patient ? "active" : ""}><b>2</b> Review history</span>
+        </div>
+      </header>
 
       {!patient ? (
         <div className="followup-search-section">

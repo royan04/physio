@@ -1,101 +1,62 @@
-.main-header {
-  background-color: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  transition: var(--transition);
+.main-header { position: sticky; top: 0; z-index: 1000; width: 100%; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--border); backdrop-filter: blur(16px); }
+.header-inner { width: min(calc(100% - 40px), 1180px); min-height: 72px; margin: 0 auto; display: flex; align-items: center; gap: 24px; }
+.brand { min-width: 0; display: inline-flex; align-items: center; gap: 11px; color: var(--ink); text-decoration: none; }
+.brand:hover { color: var(--ink); }
+.brand img { width: 44px; height: 44px; flex: 0 0 44px; object-fit: contain; border-radius: 8px; border: 1px solid var(--border); background: #fff; }
+.brand-copy { min-width: 0; display: grid; line-height: 1.15; }
+.brand-copy strong { font-size: 1rem; font-weight: 800; color: inherit; }
+.brand-copy small { margin-top: 3px; color: var(--muted); font-size: .72rem; }
+.desktop-nav { margin-left: auto; display: flex; align-items: center; gap: 5px; }
+.nav-group { display: contents; }
+.nav-section-label, .clinic-status { display: none; }
+.nav-link, .logout-link, .header-login { min-height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; border: 0; border-radius: 7px; background: transparent; box-shadow: none; color: var(--muted); font-size: .9rem; font-weight: 700; text-decoration: none; }
+.nav-link:hover, .nav-link.active { background: var(--brand-soft); color: var(--brand); }
+.logout-link:hover { background: var(--danger-soft); color: var(--danger); }
+.header-login { margin-left: auto; background: var(--brand); color: #fff; }
+.header-login:hover { background: var(--brand-strong); color: #fff; }
+.menu-toggle { display: none; width: 42px; height: 42px; padding: 0; margin-left: auto; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--ink); box-shadow: none; }
+.mobile-tab-bar { display: none; }
+
+@media (min-width: 901px) {
+  .workspace-layout .main-header { position: fixed; inset: 0 auto 0 0; width: 258px; border: 0; border-right: 1px solid var(--border); background: #fff; box-shadow: 8px 0 30px rgba(24,33,40,.045); }
+  .workspace-layout .header-inner { width: 100%; min-height: 100%; padding: 22px 16px 18px; flex-direction: column; align-items: stretch; gap: 0; }
+  .workspace-layout .brand { padding: 0 8px 22px; border-bottom: 1px solid var(--border); color: var(--ink); }
+  .workspace-layout .brand img { width: 46px; height: 46px; flex-basis: 46px; border-color: var(--border); }
+  .workspace-layout .brand-copy small { color: var(--muted); }
+  .workspace-layout .desktop-nav { min-height: 0; margin: 22px 0 0; flex: 1; display: flex; flex-direction: column; align-items: stretch; gap: 22px; }
+  .workspace-layout .nav-group { display: grid; gap: 4px; }
+  .workspace-layout .nav-section-label { display: block; padding: 0 10px 7px; color: var(--subtle); font-size: .64rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+  .workspace-layout .nav-link, .workspace-layout .logout-link { position: relative; width: 100%; min-height: 44px; justify-content: flex-start; color: #5f6d73; }
+  .workspace-layout .nav-link:hover { background: var(--surface-subtle); color: var(--ink); }
+  .workspace-layout .nav-link.active { background: var(--brand-soft); color: var(--brand); }
+  .workspace-layout .nav-link.active::before { content: ""; position: absolute; left: -16px; width: 4px; height: 22px; border-radius: 0 4px 4px 0; background: var(--brand); }
+  .workspace-layout .clinic-status { margin-top: auto; padding: 12px; display: flex; align-items: center; gap: 10px; border: 1px solid #b8ddd5; border-radius: 8px; background: var(--teal-soft); color: var(--teal); }
+  .clinic-status .status-mark { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 7px; background: #d7f0ea; }
+  .clinic-status div { min-width: 0; display: grid; }
+  .clinic-status strong { color: #145f56; font-size: .78rem; }
+  .clinic-status small { margin-top: 2px; color: #57857e; font-size: .67rem; }
+  .workspace-layout .logout-link { margin-top: 8px; color: var(--danger); }
+  .workspace-layout .logout-link:hover { background: var(--danger-soft); color: var(--danger); }
 }
 
-.navbar-brand {
-  letter-spacing: -0.5px;
-  font-family: 'Outfit', sans-serif;
-  color: var(--text-main) !important;
-  font-weight: 700 !important;
-  transition: transform 0.3s ease;
+@media (max-width: 900px) {
+  .header-inner { width: min(calc(100% - 28px), 1180px); min-height: 64px; }
+  .brand img { width: 38px; height: 38px; flex-basis: 38px; }
+  .brand-copy strong { font-size: .94rem; }
+  .desktop-nav { position: absolute; top: calc(100% + 8px); right: 14px; left: 14px; display: none; max-height: calc(100vh - 150px); overflow-y: auto; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: #fff; box-shadow: var(--shadow-lg); }
+  .desktop-nav.is-open { display: grid; gap: 12px; }
+  .nav-group { display: grid; gap: 4px; }
+  .workflow-nav { display: none; }
+  .nav-section-label { display: block; padding: 6px 10px 2px; color: var(--subtle); font-size: .65rem; font-weight: 800; text-transform: uppercase; }
+  .desktop-nav .nav-link, .desktop-nav .logout-link { width: 100%; justify-content: flex-start; }
+  .menu-toggle { display: inline-flex; }
+  .mobile-tab-bar { position: fixed; right: 0; bottom: 0; left: 0; z-index: 1100; min-height: 68px; padding: 6px max(8px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left)); display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); background: rgba(255,255,255,.98); border-top: 1px solid var(--border); box-shadow: 0 -10px 30px rgba(24,33,40,.08); backdrop-filter: blur(16px); }
+  .mobile-tab { min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 7px; color: var(--muted); font-size: .68rem; font-weight: 700; text-decoration: none; }
+  .mobile-tab.active { color: var(--brand); background: var(--brand-soft); }
 }
 
-.navbar-brand:hover {
-  transform: scale(1.02);
-}
-
-.navbar-brand span {
-  background: linear-gradient(135deg, var(--brand-primary) 0%, #ff4d4d 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.navbar-brand img {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(209, 26, 42, 0.2);
-}
-
-/* Nav Item Tweaks */
-.nav-item .icon-btn {
-  width: 42px;
-  height: 42px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  margin: 0 4px;
-  font-size: 1.1rem;
-  transition: var(--transition);
-  background-color: var(--bg-main);
-  border: 1px solid transparent;
-  color: var(--text-muted);
-  box-shadow: none;
-}
-
-.nav-item .icon-btn:hover,
-.nav-item .icon-btn:focus-visible {
-  color: var(--brand-primary);
-  background-color: var(--brand-primary-light);
-  transform: translateY(-2px);
-  border-color: rgba(209, 26, 42, 0.1);
-  box-shadow: 0 4px 12px rgba(209, 26, 42, 0.1);
-}
-
-.nav-item .btn-danger.icon-btn,
-.nav-item .btn-outline-danger.icon-btn {
-  background-color: var(--brand-primary);
-  color: white;
-  border: none;
-}
-
-.nav-item .btn-danger.icon-btn:hover {
-  background-color: var(--brand-primary-hover);
-  box-shadow: 0 4px 12px rgba(209, 26, 42, 0.25);
-}
-
-.nav-item .btn-outline-danger.icon-btn {
-  background-color: transparent;
-  border: 2px solid var(--brand-primary);
-  color: var(--brand-primary);
-}
-
-.nav-item .btn-outline-danger.icon-btn:hover {
-  background-color: var(--brand-primary);
-  color: white;
-}
-
-@media (max-width: 768px) {
-  .navbar-collapse {
-    background-color: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(16px);
-    padding: 1rem;
-    border-radius: 16px;
-    margin-top: 10px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid #eee;
-  }
-  .navbar-nav {
-    flex-direction: row;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 15px;
-  }
+@media (max-width: 380px) {
+  .brand-copy small { display: none; }
+  .header-login span { display: none; }
+  .header-login { width: 42px; padding: 0; justify-content: center; }
 }

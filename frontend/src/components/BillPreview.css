@@ -1,0 +1,21 @@
+.bill-preview-screen { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; background: #f5f8f7; }
+.bill-preview-header { min-height: 79px; padding: 12px clamp(16px,3vw,36px); display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--border); background: #fff; }
+.bill-preview-header h2 { margin: 0; color: var(--ink); font-size: 1.18rem; }.bill-preview-header p { margin: 2px 0 0; color: var(--muted); font-size: .75rem; }
+.bill-preview-close { width: 40px; height: 40px; padding: 0; display: grid; place-items: center; border: 1px solid var(--border); background: #fff; color: var(--ink); }
+.bill-preview-body { min-height: 0; flex: 1; display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 18px; padding: 18px; }
+.bill-preview-paper { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 8px; background: #fff; box-shadow: var(--shadow-md); }
+.bill-preview-paper iframe { width: 100%; height: 100%; min-height: 450px; border: 0; }
+.bill-share-panel { min-width: 0; padding: 20px; align-self: start; display: grid; gap: 11px; border: 1px solid var(--border); border-radius: 8px; background: #fff; box-shadow: var(--shadow-sm); }
+.bill-share-panel h3 { margin: 0 0 4px; font-size: 1.06rem; }
+.bill-share-panel label { display: grid; gap: 6px; color: var(--muted); font-size: .76rem; font-weight: 750; }
+.bill-share-panel input { width: 100%; margin: 0; }
+.bill-share-panel>button { width: 100%; justify-content: center; }
+.bill-share-whatsapp { border-color: #badfc9; background: #eaf8ee; color: #17673b; }.bill-share-whatsapp:hover { background: #dcf3e4; color: #155a34; }
+.bill-share-email { border-color: #c9dce9; background: #edf6fb; color: #1c6381; }.bill-share-email:hover { background: #e1f0f8; color: #14516c; }
+.bill-share-panel button:disabled { opacity: .55; cursor: wait; }
+.bill-share-help { margin: 0; color: var(--muted); font-size: .73rem; line-height: 1.5; }
+.bill-share-message { margin: 0; padding: 9px 10px; border-left: 3px solid var(--teal); border-radius: 4px; background: var(--teal-soft); color: #145f56; font-size: .75rem; line-height: 1.45; }
+.bill-share-tools { margin-top: 4px; padding-top: 13px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; border-top: 1px solid var(--border); }
+.bill-share-tools button { min-width: 0; padding: 8px; border-color: var(--border); background: #fff; color: var(--ink); font-size: .73rem; }
+@media (max-width: 800px) { .bill-preview-body { overflow-y: auto; grid-template-columns: 1fr; }.bill-preview-paper { min-height: 390px; }.bill-share-panel { grid-row: 1; }.bill-preview-paper iframe { min-height: 390px; } }
+@media (max-width: 520px) { .bill-preview-header { min-height: 70px; }.bill-preview-body { padding: 10px 10px calc(78px + env(safe-area-inset-bottom)); gap: 10px; }.bill-share-panel { padding: 15px; }.bill-preview-paper { min-height: 340px; }.bill-preview-paper iframe { min-height: 340px; } }

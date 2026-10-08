@@ -1,8 +1,6 @@
 // src/pages/BillPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Capacitor } from "@capacitor/core";
-import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import {
   collection,
   query,
@@ -14,7 +12,11 @@ import {
   runTransaction,
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+import { ArrowLeft, CalendarDays, ReceiptText, Search } from "lucide-react";
 import { auth, db } from "../firebaseConfig";
+import BillPreview from "../components/BillPreview";
+import "./Dashboard.css";
+import "./PatientVisitForm.css";
 
 const BillPage = () => {
   const navigate = useNavigate();
@@ -25,10 +27,7 @@ const BillPage = () => {
   const [selectedPatientKey, setSelectedPatientKey] = useState("");
   const [selectedApptId, setSelectedApptId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [billNo, setBillNo] = useState("");
-  // In-app bill preview modal state
-  const [billModalHtml, setBillModalHtml] = useState(null);
-  const [billModalFileName, setBillModalFileName] = useState("");
+  const [billPreview, setBillPreview] = useState(null);
 
   // Get timing from multiple sources + localStorage backup
   const location = useLocation();
@@ -331,40 +330,6 @@ const BillPage = () => {
     return `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=0.6" /><title>${billNo || "Bill"}</title></head><body style="margin:0;padding:0;">${html}</body></html>`;
   }
 
-  // FIXED: Show bill inside the app (no Chrome popup!)
-  async function openReceiptBill(params) {
-    const billHtml = buildBillHtml(params);
-    const safeBillNo = String(params.billNo || "bill").replace(/[^a-zA-Z0-9-_]/g, "_");
-    const fileName = `${safeBillNo}.html`;
-
-    if (Capacitor.isNativePlatform()) {
-      // Save file silently in background (for optional sharing later)
-      try {
-        await Filesystem.writeFile({
-          path: fileName,
-          data: billHtml,
-          directory: Directory.Documents,
-          encoding: Encoding.UTF8,
-          recursive: true,
-        });
-      } catch (fsErr) {
-        console.warn("Could not save file:", fsErr);
-      }
-      // Show bill IN-APP via modal instead of opening Chrome
-      setBillModalHtml(billHtml);
-      setBillModalFileName(fileName);
-      return { savedToDevice: true, fileName };
-    }
-
-    // Web/desktop: open in new tab and print
-    const w = window.open("", "_blank");
-    w.document.write(billHtml);
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 200);
-    return { savedToDevice: false };
-  }
-
   const handleGenerateBill = async () => {
     const appt = appointments.find((a) => a.id === selectedApptId);
     if (!appt) return;
@@ -372,7 +337,6 @@ const BillPage = () => {
     try {
       setLoading(true);
       const serial = await nextBillNumber(db);
-      setBillNo(serial);
 
       const session = appt.session || {};
 
@@ -384,6 +348,8 @@ const BillPage = () => {
       const billData = {
         billNo: serial,
         patientName: appt.patientName,
+        contact: appt.contact || "",
+        patientEmail: appt.patientEmail || "",
         doctorName: doctor?.name || "",
         department: doctor?.department || "",
         visitDate: appt.visitDate,
@@ -403,9 +369,7 @@ const BillPage = () => {
         doctorId: doctor?.id || auth.currentUser?.uid || "",
       };
 
-      await addDoc(collection(db, "bills"), billData);
-
-      const billResult = await openReceiptBill({
+      const receipt = {
         billNo: serial,
         billDate: new Date(),
         clinic: getClinicData(),
@@ -422,13 +386,11 @@ const BillPage = () => {
         ratePerSession: session.ratePerSession || session.fees || 0,
         sessionsDateText: session.sessionsDateText || appt.visitDate,
         doctorSign: doctor?.name || "Dr. Dhaval Shah",
-      });
-
-      // Don't navigate away on Android - bill modal will show in-app
-      if (!billResult?.savedToDevice) {
-        // Only navigate on web (modal handles Android)
-        navigate("/dashboard");
-      }
+      };
+      const { createBillPdf } = await import("../utils/billPdf");
+      const preview = { html: buildBillHtml(receipt), file: createBillPdf(receipt), ...receipt, contact: appt.contact || "", patientEmail: appt.patientEmail || "" };
+      await addDoc(collection(db, "bills"), billData);
+      setBillPreview(preview);
     } catch (e) {
       console.error(e);
       alert("Could not generate bill. Please try again.");
@@ -437,122 +399,33 @@ const BillPage = () => {
     }
   };
 
-  // Share bill using Web Share API (works on Android)
-  const handleShareBill = async () => {
-    if (!billModalHtml) return;
-    try {
-      const blob = new Blob([billModalHtml], { type: "text/html" });
-      const file = new File([blob], billModalFileName || "bill.html", { type: "text/html" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: "Physiotherapy Bill",
-          text: "Please find your bill attached.",
-          files: [file],
-        });
-      } else {
-        // Fallback: trigger print of iframe
-        const iframeEl = document.getElementById("bill-preview-iframe");
-        if (iframeEl) {
-          iframeEl.contentWindow.focus();
-          iframeEl.contentWindow.print();
-        }
-      }
-    } catch (err) {
-      console.error("Share failed:", err);
-    }
-  };
-
-  // In-app bill preview modal (shown after bill is generated on Android)
-  if (billModalHtml) {
-    return (
-      <div style={{
-        position: "fixed",
-        top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 9999,
-        background: "#fff",
-        display: "flex",
-        flexDirection: "column",
-      }}>
-        {/* Top bar */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "10px 16px",
-          background: "#1a1a2e",
-          color: "#fff",
-          flexShrink: 0,
-        }}>
-          <button
-            onClick={() => { setBillModalHtml(null); navigate("/dashboard"); }}
-            style={{
-              background: "none",
-              border: "1.5px solid #fff",
-              color: "#fff",
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 15,
-              cursor: "pointer",
-            }}
-          >
-            ← Done
-          </button>
-          <span style={{ fontWeight: "bold", fontSize: 16 }}>Bill Preview</span>
-          <button
-            onClick={handleShareBill}
-            style={{
-              background: "#4caf50",
-              border: "none",
-              color: "#fff",
-              borderRadius: 8,
-              padding: "6px 14px",
-              fontSize: 15,
-              cursor: "pointer",
-              fontWeight: "bold",
-            }}
-          >
-            📤 Share
-          </button>
-        </div>
-        {/* Bill iframe - renders HTML inside the app */}
-        <iframe
-          id="bill-preview-iframe"
-          srcDoc={billModalHtml}
-          style={{
-            flex: 1,
-            width: "100%",
-            border: "none",
-            background: "#fff",
-          }}
-          title="Bill Preview"
-          sandbox="allow-same-origin allow-scripts"
-        />
-      </div>
-    );
+  if (billPreview) {
+    return <BillPreview html={billPreview.html} file={billPreview.file} billNo={billPreview.billNo} patientName={billPreview.patientName} initialPhone={billPreview.contact} initialEmail={billPreview.patientEmail} onDone={() => setBillPreview(null)} />;
   }
 
   return (
-    <div className="dashboard container py-4">
+    <div className="dashboard">
       <header className="dashboard-header">
-        <h1>Generate Bill</h1>
-        {/* Show selected timing */}
-        <div style={{ fontSize: '14px', color: '#666', marginBottom: '10px' }}>
-          📅 Selected Timing:
-          <strong style={{ color: '#000' }}>
-            {timingSelection === 'morning' && 'Morning (9AM-1PM)'}
-            {timingSelection === 'evening' && 'Evening (3PM-8PM)'}
-            {timingSelection === 'both' && 'Both Morning & Evening'}
-          </strong>
+        <div>
+          <p className="page-eyebrow">Patient billing</p>
+          <h1>Generate bill</h1>
+          <div className="dashboard-subtitle">
+            <CalendarDays size={16} /> Session: <strong>
+              {timingSelection === 'morning' && 'Morning (9 AM - 1 PM)'}
+              {timingSelection === 'evening' && 'Evening (3 PM - 8 PM)'}
+              {timingSelection === 'both' && 'Morning and evening'}
+            </strong>
+          </div>
         </div>
         <button className="logout-btn" onClick={() => navigate(-1)}>
-          ← Back
+          <ArrowLeft size={18} /> Back
         </button>
       </header>
 
       {/* Search patients by name / phone */}
       <section className="filters mb-4">
         <label className="calendar-label">
-          🔍 Search Patient (name or number)
+          <span><Search size={17} /> Search patient</span>
           <input
             type="text"
             className="calendar-input"
@@ -629,10 +502,10 @@ const BillPage = () => {
 
           <button
             className="btn-red"
-            disabled={!selectedApptId}
+            disabled={!selectedApptId || loading}
             onClick={handleGenerateBill}
           >
-            Generate Bill for Selected Session
+            <ReceiptText size={18} /> {loading ? "Generating bill..." : "Generate bill for selected session"}
           </button>
         </section>
       )}
